@@ -20,6 +20,8 @@
 // --- Game Board Configuration ---
 #define BOARD_ROWS          6
 #define BOARD_COLS          7
+#define PREVIEW_AREA_HEIGHT 50 // Space above the board for the moving coin
+#define BOARD_Y_PREVIEW_OFFSET      PREVIEW_AREA_HEIGHT // Adjust board Y position
 
 #define CIRCLE_RADIUS       14 // Adjust for desired size
 #define CIRCLE_DIAMETER     (2 * CIRCLE_RADIUS)
@@ -41,6 +43,12 @@
 #define PLAYER2_COLOR       LCD_COLOR_YELLOW // P2 is Yellow
 #define BACKGROUND_COLOR    LCD_COLOR_BLACK // Screen background
 
+// Game Over Screen Button
+#define RESTART_BUTTON_WIDTH  120
+#define RESTART_BUTTON_HEIGHT 40
+#define RESTART_BUTTON_X      ((LCD_PIXEL_WIDTH - RESTART_BUTTON_WIDTH) / 2)
+#define RESTART_BUTTON_Y      (LCD_PIXEL_HEIGHT - RESTART_BUTTON_HEIGHT - 30) // Near bottom
+
 // --- Slot State ---
 typedef enum {
     SLOT_EMPTY,
@@ -57,16 +65,13 @@ typedef struct {
 } Coin_t; // Renamed to avoid conflict if needed elsewhere
 
 // --- Application States ---
-
 typedef enum {
     APP_STATE_INIT,
     APP_STATE_MENU,
-    APP_STATE_GAME_1P_SETUP, // Optional intermediate state
-    APP_STATE_GAME_1P_PLAYER_TURN,
-    APP_STATE_GAME_1P_AI_TURN,
-    APP_STATE_GAME_2P_SETUP, // Optional intermediate state
-    APP_STATE_GAME_2P_P1_TURN,
-    APP_STATE_GAME_2P_P2_TURN,
+    APP_STATE_GAME_P1_TURN, // Player 1's turn (Human or AI)
+    APP_STATE_GAME_P2_TURN, // Player 2's turn (Human or AI)
+	APP_STATE_GAME_AI_TURN,
+    APP_STATE_GAME_CHECK_WIN,   // State to check win condition after drop
     APP_STATE_GAME_OVER
 } ApplicationState_t;
 
@@ -89,13 +94,22 @@ void initializeGameBoard(void); // Sets all slots to empty
 void drawGameBoard(void);
 void drawMenuScreen(void);
 void handleTouchInput(void);
-void handleHardwareButton(void);
-bool isTouchInside(uint16_t touchX, uint16_t touchY, uint16_t btnX, uint16_t btnY, uint16_t btnW, uint16_t btnH);
-// Add other handlers as needed: handleGameLogic, handleGyroInput etc.
-void LCD_Visual_Demo(void);
-void LCD_Start_Menu(void);
+void pollHardwareButton(void); // Replaces handleHardwareButton if using polling task
+void handleGameTouchInput(uint16_t touchX, uint16_t touchY); // Specific game touch handler
+void drawPreviewCoin(void);     // Draws the coin above the board
+void dropCoin(void);            // Handles the logic for dropping the coin
+int findLowestEmptyRow(int col); // Finds available row in a column
 uint16_t getSlotColor(SlotState_t state); // Helper to get draw color
 
+bool isTouchInside(uint16_t touchX, uint16_t touchY, uint16_t btnX, uint16_t btnY, uint16_t btnW, uint16_t btnH);
+void LCD_Visual_Demo(void);
+void LCD_Start_Menu(void);
+void LCD_DisplayString(uint16_t Xpos, uint16_t Ypos, uint8_t *ptr, FONT_t* font, uint16_t textColor, uint16_t bgColor, bool opaque);
+
+bool checkWin(SlotState_t player);
+bool checkTie(void);
+void drawGameOverScreen(void);
+void handleAITurn(void);
 
 
 #if (COMPILE_TOUCH_FUNCTIONS == 1)

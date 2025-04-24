@@ -31,7 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define SCHEDULER_TICK_MS 10 // Run scheduler checks every 10ms
+//#define SCHEDULER_TICK_MS 10 // Run scheduler checks every 10ms
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -130,29 +130,32 @@ int main(void)
 // --- Scheduler Execution ---
 void Scheduler_Run(void) {
     // Wait for SysTick to signal a check interval
-    //while(scheduler_ticks == 0) {
-    //}
-    //scheduler_ticks = 0; // Reset the flag
+    while(scheduler_ticks == 0) { } // Wait for SysTick
+    scheduler_ticks = 0;
 
-	uint32_t events = getScheduledEvents();
+    uint32_t events = getScheduledEvents();
 
-    if (events != NO_EVENT) { // Only run tasks if there's something to do
-        if (events & TOUCH_POLLING_EVENT) {
-            handleTouchInput();
-            removeSchedulerEvent(TOUCH_POLLING_EVENT);
-        }
+    if (events & TOUCH_POLLING_EVENT) {
+        handleTouchInput(); // Handles touch based on internal state
+        removeSchedulerEvent(TOUCH_POLLING_EVENT);
+    }
 
-        if (events & HW_BUTTON_PRESS_EVENT) {
-            handleHardwareButton();
-            removeSchedulerEvent(HW_BUTTON_PRESS_EVENT);
-        }
+    if (events & HW_BUTTON_POLLING_EVENT) {
+        pollHardwareButton(); // Checks button based on internal state
+        removeSchedulerEvent(HW_BUTTON_POLLING_EVENT);
+    }
 
-        // Add handlers for other events (GAME_UPDATE_EVENT, GYRO_READ_EVENT, etc.)
-        // if (events & GAME_UPDATE_EVENT) { ... }
-        // if (events & GYRO_READ_EVENT) { ... }
+    if (events & GAME_UPDATE_EVENT) {
+        // Simply call the handler. It will check the state internally.
+        handleAITurn(); // Call the AI handler function
+        // Add other game updates here if GAME_UPDATE_EVENT is used for more things
+        removeSchedulerEvent(GAME_UPDATE_EVENT);
+    }
 
-        removeSchedulerEvent(APP_DELAY_FLAG_EVENT); // Clear if using app delay
-
+    if (events & RENDER_SCREEN_EVENT) {
+         // If drawing is event-driven, call the relevant draw function
+         // Example: could call a generic drawUpdate() function
+         removeSchedulerEvent(RENDER_SCREEN_EVENT);
     }
 }
 

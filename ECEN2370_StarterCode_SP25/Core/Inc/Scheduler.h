@@ -34,7 +34,7 @@ void removeSchedulerEvent(uint32_t event);
 // Define events relevant to Connect Four project
 #define NO_EVENT              (0)      // Indicate no events pending
 #define TOUCH_POLLING_EVENT   (1 << 0) // Check for touchscreen input
-#define HW_BUTTON_PRESS_EVENT (1 << 1) // Hardware button was pressed (using interrupt)
+#define HW_BUTTON_POLLING_EVENT (1 << 1) // Hardware button was pressed
 #define GAME_UPDATE_EVENT     (1 << 2) // Time to update game logic (e.g., check win, AI move)
 #define GYRO_READ_EVENT       (1 << 3) // Time to read gyro (if I use for extra credit)
 #define RENDER_SCREEN_EVENT   (1 << 4) // Time to redraw parts or all of the screen

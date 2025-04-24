@@ -19,7 +19,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "scheduler.h"
 #include "stm32f4xx_it.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -31,7 +33,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define SCHEDULER_TICK_MS 10 // Run scheduler checks every 10ms
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -41,7 +43,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+extern volatile uint32_t scheduler_ticks;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -180,15 +182,21 @@ void PendSV_Handler(void)
 /**
   * @brief This function handles System tick timer.
   */
-void SysTick_Handler(void)
-{
-  /* USER CODE BEGIN SysTick_IRQn 0 */
-
-  /* USER CODE END SysTick_IRQn 0 */
+void SysTick_Handler(void) {
   HAL_IncTick();
-  /* USER CODE BEGIN SysTick_IRQn 1 */
 
-  /* USER CODE END SysTick_IRQn 1 */
+  static uint32_t tick_count = 0;
+  tick_count++;
+
+  // Add events periodically
+  if ((tick_count % SCHEDULER_TICK_MS) == 0) {
+     scheduler_ticks = 1;
+     addSchedulerEvent(HW_BUTTON_POLLING_EVENT);
+  }
+  if ((tick_count % 50) == 0) { // Touch poll rate
+      addSchedulerEvent(TOUCH_POLLING_EVENT);
+  }
+
 }
 
 /******************************************************************************/
