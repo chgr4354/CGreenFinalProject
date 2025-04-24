@@ -285,6 +285,14 @@ void LCD_DisplayChar(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii)
   LCD_Draw_Char(Xpos, Ypos, &LCD_Currentfonts->table[Ascii * LCD_Currentfonts->Height]);
 }
 
+void startMenu(void) {
+
+	HAL_Delay(1500);
+	LCD_Clear(0,LCD_COLOR_BLUE);
+	LCD_SetTextColor(LCD_COLOR_BLACK);
+	LCD_SetFont(&Font16x24);
+}
+
 void visualDemo(void)
 {
 	uint16_t x;

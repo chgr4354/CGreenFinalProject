@@ -18,7 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
+#include "Scheduler.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ApplicationCode.h"
@@ -31,7 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define SCHEDULER_TICK_MS 10 // Run scheduler checks every 10ms
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -51,7 +51,7 @@ SPI_HandleTypeDef hspi5;
 TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
-
+volatile uint32_t scheduler_ticks = 0; // Flag set by SysTick
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -63,7 +63,7 @@ static void MX_TIM2_Init(void);
 static void MX_SPI5_Init(void);
 static void MX_I2C3_Init(void);
 /* USER CODE BEGIN PFP */
-
+void Scheduler_Run(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -107,21 +107,52 @@ int main(void)
   MX_I2C3_Init();
   /* USER CODE BEGIN 2 */
   ApplicationInit(); // Initializes the LCD functionality
-  LCD_Visual_Demo();
-  HAL_Delay(5000);
+  //LCD_Visual_Demo();
+  //HAL_Delay(5000);
   /* USER CODE END 2 */
 #if COMPILE_TOUCH_FUNCTIONS == 1 // This block will need to be deleted
-  LCD_Touch_Polling_Demo(); // This function Will not return
+  //LCD_Touch_Polling_Demo(); // This function Will not return
 #endif
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-
+	Scheduler_Run(); // Run the scheduler checks
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
+}
+
+// --- Scheduler Execution ---
+void Scheduler_Run(void) {
+    // Wait for SysTick to signal a check interval
+    // Replace with __WFI() and interrupt wake-up for efficiency later
+    while(scheduler_ticks == 0) {
+       // Optionally add low-power mode entry here
+    }
+    scheduler_ticks = 0; // Reset the flag
+
+    uint32_t events = getScheduledEvents();
+
+    if (events != NO_EVENT) { // Only run tasks if there's something to do
+        if (events & TOUCH_POLLING_EVENT) {
+            handleTouchInput();
+            removeSchedulerEvent(TOUCH_POLLING_EVENT);
+        }
+
+        if (events & HW_BUTTON_PRESS_EVENT) {
+            handleHardwareButton();
+            removeSchedulerEvent(HW_BUTTON_PRESS_EVENT);
+        }
+
+        // Add handlers for other events (GAME_UPDATE_EVENT, GYRO_READ_EVENT, etc.)
+        // if (events & GAME_UPDATE_EVENT) { ... }
+        // if (events & GYRO_READ_EVENT) { ... }
+
+        removeSchedulerEvent(APP_DELAY_FLAG_EVENT); // Clear if using app delay
+
+    }
 }
 
 /**
