@@ -15,6 +15,7 @@ extern void initialise_monitor_handles(void);
 #if COMPILE_TOUCH_FUNCTIONS == 1
 static ApplicationState_t currentAppState = APP_STATE_INIT;
 static STMPE811_TouchData StaticTouchData;
+static SlotState_t gameBoard[BOARD_ROWS][BOARD_COLS];
 #endif // COMPILE_TOUCH_FUNCTIONS
 
 void ApplicationInit(void)
@@ -74,58 +75,120 @@ void LCD_DisplayString(uint16_t Xpos, uint16_t Ypos, uint8_t *ptr, FONT_t* font,
 }
 
 void drawMenuScreen() {
-    LCD_Clear(0, LCD_COLOR_BLUE); // Background
 
-    // --- Draw Button 1 (1 Player) ---
-    LCD_Draw_Rect(BUTTON1_X, BUTTON1_Y, BUTTON_WIDTH, BUTTON_HEIGHT, LCD_COLOR_YELLOW); // Outline
-    LCD_DisplayString(BUTTON1_X + 5, BUTTON1_Y + (BUTTON_HEIGHT - Font16x24.Height)/2, (uint8_t*)"1 Player", &Font16x24, LCD_COLOR_WHITE, LCD_COLOR_BLUE, false);
+		LCD_Clear(0, LCD_COLOR_BLUE); // Background
 
-    // --- Draw Button 2 (2 Player) ---
-    LCD_Draw_Rect(BUTTON2_X, BUTTON2_Y, BUTTON_WIDTH, BUTTON_HEIGHT, LCD_COLOR_YELLOW); // Outline
-    LCD_DisplayString(BUTTON2_X + 5, BUTTON2_Y + (BUTTON_HEIGHT - Font16x24.Height)/2, (uint8_t*)"2 Player", &Font16x24, LCD_COLOR_WHITE, LCD_COLOR_BLUE, false);
+		// --- Draw Button 1 (1 Player) ---
+		LCD_Draw_Rect(BUTTON1_X, BUTTON1_Y, BUTTON_WIDTH, BUTTON_HEIGHT, LCD_COLOR_YELLOW); // Outline
+		LCD_DisplayString(BUTTON1_X + 5, BUTTON1_Y + (BUTTON_HEIGHT - Font16x24.Height)/2, (uint8_t*)"1P", &Font16x24, LCD_COLOR_WHITE, LCD_COLOR_BLUE, false);
 
-    // --- Title ---
-    LCD_DisplayString((LCD_PIXEL_WIDTH - 12*Font16x24.Width)/2, 30, (uint8_t*)"Connect Four", &Font16x24, LCD_COLOR_YELLOW, LCD_COLOR_BLUE, false); // Centered title
+		// --- Draw Button 2 (2 Player) ---
+		LCD_Draw_Rect(BUTTON2_X, BUTTON2_Y, BUTTON_WIDTH, BUTTON_HEIGHT, LCD_COLOR_YELLOW); // Outline
+		LCD_DisplayString(BUTTON2_X + 5, BUTTON2_Y + (BUTTON_HEIGHT - Font16x24.Height)/2, (uint8_t*)"2P", &Font16x24, LCD_COLOR_WHITE, LCD_COLOR_BLUE, false);
+
+		// --- Title ---
+		LCD_DisplayString((LCD_PIXEL_WIDTH - 12*Font16x24.Width)/2, 30, (uint8_t*)"Connect Four", &Font16x24, LCD_COLOR_YELLOW, LCD_COLOR_BLUE, false); // Centered title
+
+		//handleTouchInput();
+		addSchedulerEvent(TOUCH_POLLING_EVENT);
+}
+
+
+uint16_t getSlotColor(SlotState_t state) {
+    switch(state) {
+        case SLOT_PLAYER1:
+            return PLAYER1_COLOR;
+        case SLOT_PLAYER2:
+            return PLAYER2_COLOR;
+        case SLOT_EMPTY:
+        default:
+            return EMPTY_SLOT_COLOR;
+    }
+}
+
+void initializeGameBoard() {
+    printf("Initializing Game Board...\n");
+    for (int r = 0; r < BOARD_ROWS; r++) {
+        for (int c = 0; c < BOARD_COLS; c++) {
+            gameBoard[r][c] = SLOT_EMPTY;
+        }
+    }
+}
+
+void drawGameBoard() {
+    printf("Drawing Game Board...\n");
+    // 1. Clear the screen or draw a background
+    LCD_Clear(0, BACKGROUND_COLOR); // Or use LCD_Fill_Rect for just the screen area
+
+    // 2. Draw the main board structure (the blue rectangle)
+    LCD_Fill_Rect(BOARD_X_OFFSET, BOARD_Y_OFFSET, BOARD_DRAW_WIDTH, BOARD_DRAW_HEIGHT, BOARD_COLOR);
+
+    // 3. Draw the slots (circles) based on the gameBoard state
+    for (int r = 0; r < BOARD_ROWS; r++) {
+        for (int c = 0; c < BOARD_COLS; c++) {
+            // Calculate the center coordinates of the circle for slot (r, c)
+            uint16_t centerX = BOARD_X_OFFSET + BOARD_SPACING + CIRCLE_RADIUS + c * (CIRCLE_DIAMETER + BOARD_SPACING);
+            uint16_t centerY = BOARD_Y_OFFSET + BOARD_SPACING + CIRCLE_RADIUS + r * (CIRCLE_DIAMETER + BOARD_SPACING);
+
+            // Get the color for the current slot state
+            uint16_t slotColor = getSlotColor(gameBoard[r][c]);
+
+            // Draw the filled circle representing the slot/coin
+            // Make sure LCD_Draw_Circle_Fill exists and works!
+            LCD_Draw_Circle_Fill(centerX, centerY, CIRCLE_RADIUS, slotColor);
+        }
+    }
+     printf("Game Board Drawn.\n");
 }
 
 
 void handleTouchInput() {
-    if (currentAppState != APP_STATE_MENU) {
-        return; // Only handle touch in menu state for now
-    }
+    //if (currentAppState != APP_STATE_MENU) {
+    //    return; // Only handle touch in menu state for now
+    //}
+	STMPE811_TouchData touchData;
+//	STMPE811_State_t touchState = returnTouchStateAndLocation(&touchData);
 
-    STMPE811_TouchData touchData;
-    STMPE811_State_t touchState = returnTouchStateAndLocation(&touchData);
 
-    // Basic Debounce: Only process if it was previously released
-    static bool wasReleased = true;
+//	static bool wasReleased = true; // Basic Debounce: Only process if it was previously released
 
-    if (touchState == STMPE811_State_Pressed && wasReleased) {
-        wasReleased = false; // Mark as pressed
-        printf("Touch Press Detected at X: %d, Y: %d\n", touchData.x, touchData.y);
+	while(1) {
+		returnTouchStateAndLocation(&touchData);
 
-        // Check Button 1
-        if (isTouchInside(touchData.x, touchData.y, BUTTON1_X, BUTTON1_Y, BUTTON_WIDTH, BUTTON_HEIGHT)) {
-            printf("Button 1 (1 Player) Selected!\n");
-            currentAppState = APP_STATE_GAME_1P_SETUP; // Transition state
-            // TODO: Trigger drawing the game screen or setup
-            LCD_Clear(0, LCD_COLOR_GREEN); // Placeholder
-            LCD_DisplayString(50, 150, (uint8_t*)"Setup 1P Game...", &Font16x24, LCD_COLOR_WHITE, LCD_COLOR_GREEN, false);
-        }
-        // Check Button 2
-        else if (isTouchInside(touchData.x, touchData.y, BUTTON2_X, BUTTON2_Y, BUTTON_WIDTH, BUTTON_HEIGHT)) {
-            printf("Button 2 (2 Player) Selected!\n");
-            currentAppState = APP_STATE_GAME_2P_SETUP; // Transition state
-            // TODO: Trigger drawing the game screen or setup
-             LCD_Clear(0, LCD_COLOR_RED); // Placeholder
-             LCD_DisplayString(50, 150, (uint8_t*)"Setup 2P Game...", &Font16x24, LCD_COLOR_WHITE, LCD_COLOR_RED, false);
-        }
-    } else if (touchState == STMPE811_State_Released) {
-         if (!wasReleased) {
-              printf("Touch Released.\n");
-              wasReleased = true; // Mark as released, ready for next press
-         }
-    }
+		if (currentAppState == APP_STATE_MENU) {
+
+			// Check Button 2
+			if (isTouchInside(touchData.x, touchData.y, BUTTON1_X, BUTTON1_Y, BUTTON_WIDTH, BUTTON_HEIGHT)) {
+				printf("Button 2 (2 Player) Selected!\n");
+				currentAppState = APP_STATE_GAME_1P_PLAYER_TURN; // Transition state
+
+				//LCD_Clear(0, LCD_COLOR_GREEN); // Placeholder
+	            initializeGameBoard(); // Initialize board data
+	            drawGameBoard();       // Draw the initial empty board
+				addSchedulerEvent(TOUCH_POLLING_EVENT);
+				return;
+			}
+			// Check Button 1
+			else if (isTouchInside(touchData.x, touchData.y, BUTTON2_X, BUTTON2_Y, BUTTON_WIDTH, BUTTON_HEIGHT)) {
+				printf("Button 1 (1 Player) Selected!\n");
+				currentAppState = APP_STATE_GAME_1P_SETUP; // Transition state
+
+				//LCD_Clear(0, LCD_COLOR_RED); // Placeholder
+		        initializeGameBoard(); // Initialize board data
+		        drawGameBoard();       // Draw the initial empty board
+				addSchedulerEvent(TOUCH_POLLING_EVENT);
+				return;
+			}
+
+			addSchedulerEvent(TOUCH_POLLING_EVENT);
+		}  else if (currentAppState == APP_STATE_GAME_1P_PLAYER_TURN) {
+	         // Handle touch input during the game (e.g., selecting column, dropping piece)
+	         // This will be added later.
+	    }  else if (currentAppState == APP_STATE_GAME_1P_AI_TURN) {
+	         // Handle touch input during the game (e.g., selecting column, dropping piece)
+	         // This will be added later.
+	    }
+	}
 }
 
 // Check if touch coordinates are within a button's bounds
@@ -146,9 +209,9 @@ void handleHardwareButton() {
         // --- Define action for HW button ---
         // Example: Reset to Menu screen if in game
         if (currentAppState != APP_STATE_MENU && currentAppState != APP_STATE_INIT) {
-            printf("Resetting to Menu via HW Button.\n");
-            currentAppState = APP_STATE_MENU;
-            drawMenuScreen(); // Redraw the menu
+            printf("Placing coin\n");
+            //currentAppState = APP_STATE_MENU;
+            //drawMenuScreen(); // Redraw the menu
         }
          // Example: If already in menu, maybe toggle something? (less useful here)
          // else if (currentAppState == APP_STATE_MENU) { ... }

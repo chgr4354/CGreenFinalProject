@@ -48,7 +48,7 @@ void Button_Interrupt_Init(void) {
     buttonConfig.Mode = GPIO_MODE_INPUT;
     buttonConfig.Pull = GPIO_NOPULL;
     buttonConfig.Speed = GPIO_SPEED_FREQ_LOW;
-    buttonConfig.Alternate = GPIO_MODE_OUTPUT_OD;
+    //buttonConfig.Alternate = GPIO_MODE_OUTPUT_OD;
 
     //GPIO_ClockControl(BUTTON_GPIO_PORT, ENABLE);
     //GPIO_Init(BUTTON_GPIO_PORT, &buttonConfig);

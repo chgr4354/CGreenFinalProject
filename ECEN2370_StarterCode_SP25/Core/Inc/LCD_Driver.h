@@ -63,8 +63,9 @@ void LCD_DisplayChar(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii);
 void LCD_SetTextColor(uint16_t Color);
 void LCD_SetFont(FONT_t *fonts);
 
-// Draw Circle Filled
+// Draw Filled
 void LCD_Draw_Circle_Fill(uint16_t Xpos, uint16_t Ypos, uint16_t radius, uint16_t color);
+void LCD_Fill_Rect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t color); // Declare if not in LCD_Driver.h
 
 // Draw Vertical Line
 void LCD_Draw_Vertical_Line(uint16_t x, uint16_t y, uint16_t len, uint16_t color);

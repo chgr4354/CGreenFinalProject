@@ -115,6 +115,9 @@ int main(void)
 #endif
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+
+
   while (1)
   {
     /* USER CODE END WHILE */
@@ -127,13 +130,11 @@ int main(void)
 // --- Scheduler Execution ---
 void Scheduler_Run(void) {
     // Wait for SysTick to signal a check interval
-    // Replace with __WFI() and interrupt wake-up for efficiency later
-    while(scheduler_ticks == 0) {
-       // Optionally add low-power mode entry here
-    }
-    scheduler_ticks = 0; // Reset the flag
+    //while(scheduler_ticks == 0) {
+    //}
+    //scheduler_ticks = 0; // Reset the flag
 
-    uint32_t events = getScheduledEvents();
+	uint32_t events = getScheduledEvents();
 
     if (events != NO_EVENT) { // Only run tasks if there's something to do
         if (events & TOUCH_POLLING_EVENT) {
