@@ -17,13 +17,15 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <stdio.h>
+
 #include "main.h"
 #include "Scheduler.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ApplicationCode.h"
 /* USER CODE END Includes */
-
+extern void initialise_monitor_handles(void);
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
