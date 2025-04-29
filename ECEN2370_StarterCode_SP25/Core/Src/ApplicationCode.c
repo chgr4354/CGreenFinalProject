@@ -85,8 +85,6 @@ void LCD_Draw_Rect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint
 void LCD_DisplayString(uint16_t Xpos, uint16_t Ypos, uint8_t *ptr, FONT_t* font, uint16_t textColor, uint16_t bgColor, bool opaque) {
     LCD_SetFont(font);
     LCD_SetTextColor(textColor);
-    // Background color setting would go here if opaque is true
-    // This requires a fill rectangle function or modifying LCD_DisplayChar
 
     while (*ptr != '\0') {
         // Add bounds checking
@@ -159,7 +157,6 @@ void drawGameBoard() {
             uint16_t slotColor = getSlotColor(gameBoard[r][c]);
 
             // Draw the filled circle representing the slot/coin
-            // Make sure LCD_Draw_Circle_Fill exists and works!
             LCD_Draw_Circle_Fill(centerX, centerY, CIRCLE_RADIUS, slotColor);
         }
     }
@@ -191,9 +188,9 @@ void drawGameOverScreen() {
 
     // --- Display Scores ---
     LCD_SetFont(&Font12x12);
-    text_color = LCD_COLOR_WHITE; // Explicitly use WHITE
+    text_color = LCD_COLOR_WHITE;
 
-    sprintf(message, "Score: P1 (%lu) - %s (%lu)", player1Score, isOnePlayerMode ? "AI" : "P2", player2Score);
+    sprintf(message, "P1:(%lu) - P2:(%lu)", player1Score, player2Score);
     text_x = (LCD_PIXEL_WIDTH - strlen(message) * Font12x12.Width) / 2; // Center horizontally
     text_y = 120; // Vertical position
 
@@ -202,10 +199,9 @@ void drawGameOverScreen() {
 
 
     // --- Display Round Time ---
-    // (Font is already Font12x12, Color is already White)
     uint32_t duration_ms = roundEndTime - roundStartTime;
     uint32_t duration_s = duration_ms / 1000;
-    sprintf(message, "Round Time: %lu seconds", duration_s);
+    sprintf(message, "Time: %lu seconds", duration_s);
     text_x = (LCD_PIXEL_WIDTH - strlen(message) * Font12x12.Width) / 2; // Center horizontally
     text_y = 150; // Vertical position
 
@@ -214,7 +210,6 @@ void drawGameOverScreen() {
 
 
     // --- Draw Restart Button ---
-    // (Keep this code as is)
     LCD_Fill_Rect(RESTART_BUTTON_X, RESTART_BUTTON_Y, RESTART_BUTTON_WIDTH, RESTART_BUTTON_HEIGHT, LCD_COLOR_GREY);
     LCD_Draw_Rect(RESTART_BUTTON_X, RESTART_BUTTON_Y, RESTART_BUTTON_WIDTH, RESTART_BUTTON_HEIGHT, LCD_COLOR_WHITE); // Outline
     LCD_SetFont(&Font16x24);
@@ -337,6 +332,7 @@ void dropCoin() {
 
 void handleTouchInput() {
 	STMPE811_TouchData touchData;
+	touchData.orientation = STMPE811_Orientation_Portrait_2;
     STMPE811_State_t touchState = returnTouchStateAndLocation(&touchData);
     if (touchState != STMPE811_State_Pressed) return;
     uint32_t currentTime = HAL_GetTick();
