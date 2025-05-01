@@ -13,13 +13,12 @@
 
 extern void initialise_monitor_handles(void); 
 
-//#if COMPILE_TOUCH_FUNCTIONS == 1
 
 // --- Global/Static Variables ---
 static ApplicationState_t currentAppState = APP_STATE_INIT;
 static STMPE811_TouchData StaticTouchData;
 static SlotState_t gameBoard[BOARD_ROWS][BOARD_COLS];
-//#endif // COMPILE_TOUCH_FUNCTIONS
+
 
 // --- Game State Variables ---
 static SlotState_t currentPlayer; // Tracks the current player (SLOT_PLAYER1 or SLOT_PLAYER2)
@@ -37,7 +36,7 @@ static bool isOnePlayerMode = false; // Track game mode
 // --- Debounce Timers ---
 static uint32_t lastTouchMoveTime = 0;
 static uint32_t lastButtonPressTime = 0;
-#define TOUCH_MOVE_DEBOUNCE 100 // ms between allowed preview coin moves
+#define TOUCH_MOVE_DEBOUNCE 200 // ms between allowed preview coin moves
 #define BUTTON_PRESS_DEBOUNCE 300 // ms between allowed button presses
 
 // External Handles
@@ -61,8 +60,8 @@ void ApplicationInit(void)
 
     currentAppState = APP_STATE_MENU;
     drawMenuScreen();
-    printf("Initial Menu Drawn. Entering Scheduler Loop.\n");
-    printf("----------------------\n");
+    //printf("Initial Menu Drawn. Entering Scheduler Loop.\n");
+    //printf("----------------------\n");
 
 	#endif // COMPILE_TOUCH_FUNCTIONS
 }
@@ -91,7 +90,7 @@ void LCD_DisplayString(uint16_t Xpos, uint16_t Ypos, uint8_t *ptr, FONT_t* font,
         if (Xpos >= LCD_PIXEL_WIDTH - font->Width || Ypos >= LCD_PIXEL_HEIGHT - font->Height) {
             break;
         }
-        LCD_DisplayChar(Xpos, Ypos, *ptr); // Assumes transparent background
+        LCD_DisplayChar(Xpos, Ypos, *ptr);
         Xpos += font->Width;
         ptr++;
     }
@@ -112,7 +111,6 @@ void drawMenuScreen() {
 		// --- Title ---
 		LCD_DisplayString((LCD_PIXEL_WIDTH - 12*Font16x24.Width)/2, 30, (uint8_t*)"Connect Four", &Font16x24, LCD_COLOR_YELLOW, LCD_COLOR_BLUE, false); // Centered title
 
-		//handleTouchInput();
 		addSchedulerEvent(TOUCH_POLLING_EVENT);
 }
 
@@ -130,7 +128,7 @@ uint16_t getSlotColor(SlotState_t state) {
 }
 
 void initializeGameBoard() {
-    printf("Initializing Game Board...\n");
+    //printf("Initializing Game Board...\n");
     for (int r = 0; r < BOARD_ROWS; r++) {
         for (int c = 0; c < BOARD_COLS; c++) {
             gameBoard[r][c] = SLOT_EMPTY;
@@ -139,14 +137,14 @@ void initializeGameBoard() {
 }
 
 void drawGameBoard() {
-    printf("Drawing Game Board...\n");
-    // 1. Clear the screen or draw a background
-    LCD_Clear(0, BACKGROUND_COLOR); // Or use LCD_Fill_Rect for just the screen area
+    //printf("Drawing Game Board...\n");
+    // 1. Clear the screen
+    LCD_Clear(0, BACKGROUND_COLOR);
 
     // 2. Draw the main board structure (the blue rectangle)
     LCD_Fill_Rect(BOARD_X_OFFSET, BOARD_Y_OFFSET, BOARD_DRAW_WIDTH, BOARD_DRAW_HEIGHT, BOARD_COLOR);
 
-    // 3. Draw the slots (circles) based on the gameBoard state
+    // 3. Draw the slots based on the gameBoard state
     for (int r = 0; r < BOARD_ROWS; r++) {
         for (int c = 0; c < BOARD_COLS; c++) {
             // Calculate the center coordinates of the circle for slot (r, c)
@@ -160,11 +158,11 @@ void drawGameBoard() {
             LCD_Draw_Circle_Fill(centerX, centerY, CIRCLE_RADIUS, slotColor);
         }
     }
-     printf("Game Board Drawn.\n");
+    //printf("Game Board Drawn.\n");
 }
 
 void drawGameOverScreen() {
-    LCD_Clear(0, BACKGROUND_COLOR); // Background (Black)
+    LCD_Clear(0, BACKGROUND_COLOR); // Background
 
     char message[40];
     uint16_t text_color;
@@ -192,9 +190,9 @@ void drawGameOverScreen() {
 
     sprintf(message, "P1:(%lu) - P2:(%lu)", player1Score, player2Score);
     text_x = (LCD_PIXEL_WIDTH - strlen(message) * Font12x12.Width) / 2; // Center horizontally
-    text_y = 120; // Vertical position
+    text_y = STATS_Y_SCORE; // Vertical position
 
-    printf("Drawing Score at X=%d, Y=%d: %s\n", text_x, text_y, message); // Add debug print
+    //printf("Drawing Score at X=%d, Y=%d: %s\n", text_x, text_y, message); // Add debug print
     LCD_DisplayString(text_x, text_y, (uint8_t*)message, &Font12x12, text_color, BACKGROUND_COLOR, false);
 
 
@@ -203,9 +201,9 @@ void drawGameOverScreen() {
     uint32_t duration_s = duration_ms / 1000;
     sprintf(message, "Time: %lu seconds", duration_s);
     text_x = (LCD_PIXEL_WIDTH - strlen(message) * Font12x12.Width) / 2; // Center horizontally
-    text_y = 150; // Vertical position
+    text_y = STATS_Y_TIME; // Vertical position
 
-    printf("Drawing Time at X=%d, Y=%d: %s\n", text_x, text_y, message); // Add debug print
+    //printf("Drawing Time at X=%d, Y=%d: %s\n", text_x, text_y, message); // Add debug print
     LCD_DisplayString(text_x, text_y, (uint8_t*)message, &Font12x12, text_color, BACKGROUND_COLOR, false);
 
 
@@ -339,6 +337,9 @@ void handleTouchInput() {
     if (currentTime - lastTouchMoveTime < TOUCH_MOVE_DEBOUNCE) return;
     lastTouchMoveTime = currentTime;
 
+    // Invert Y coordinate ONLY for button checks - this fixes wrong y values
+    //uint16_t inverted_touch_y = LCD_PIXEL_HEIGHT - 1 - touchData.y;
+
 	// --- State Machine for Touch ---
     switch(currentAppState) {
     	case APP_STATE_MENU:
@@ -351,7 +352,7 @@ void handleTouchInput() {
 				currentPlayer = SLOT_PLAYER1;
 				currentColumn = BOARD_COLS / 2;
 				roundStartTime = HAL_GetTick();
-				currentAppState = APP_STATE_GAME_P1_TURN; // Start P1 turn (Human)
+				currentAppState = APP_STATE_GAME_P1_TURN; // Start P1 turn
 				drawGameBoard();
 				drawPreviewCoin();
 			}
@@ -411,7 +412,7 @@ void handleGameTouchInput(uint16_t touchX, uint16_t touchY) {
           // Move Left
           if (currentColumn > 0) {
                 currentColumn--;
-                printf("Preview Coin Moved Left to Column %d\n", currentColumn);
+                //printf("Preview Coin Moved Left to Column %d\n", currentColumn);
                 drawPreviewCoin(); // Redraw preview coin in new position
           }
      }
@@ -420,7 +421,7 @@ void handleGameTouchInput(uint16_t touchX, uint16_t touchY) {
           // Move Right
           if (currentColumn < BOARD_COLS - 1) {
                 currentColumn++;
-                 printf("Preview Coin Moved Right to Column %d\n", currentColumn);
+                //printf("Preview Coin Moved Right to Column %d\n", currentColumn);
                 drawPreviewCoin(); // Redraw preview coin in new position
           }
      }
@@ -434,10 +435,9 @@ void pollHardwareButton() {
 
     uint32_t currentTime = HAL_GetTick();
 
-    // Read the button state (Assumes Button_IsPressed() uses HAL_GPIO_ReadPin)
-    // Assumes button press pulls LOW (requires internal/external pull-up on PA0)
-    if (Button_IsPressed()) { // Or directly: HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_RESET
-    //if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_RESET) { // Check for LOW signal
+    // Read the button state
+
+    if (Button_IsPressed()) {
 
         // Debounce check
         if (currentTime - lastButtonPressTime > BUTTON_PRESS_DEBOUNCE) {
@@ -446,67 +446,127 @@ void pollHardwareButton() {
             dropCoin(); // Trigger the coin drop logic
         }
     } else {
-         // Button is not pressed (HIGH signal due to pull-up)
-         // Can optionally reset debounce timer here if needed, but usually not necessary
+         // Button is not pressed
+         // Can optionally reset debounce timer here if needed,
          // lastButtonPressTime = 0; // Allow immediate press after release
     }
 }
 
 void handleAITurn() {
     if (currentAppState != APP_STATE_GAME_AI_TURN) {
-        return; // Should not happen, but safety check
+        return;
     }
 
-    printf("AI Thinking...\n");
-    // Add a small delay for realism?
-    HAL_Delay(500); // Example: 500ms thinking time
+    //printf("AI Thinking...\n");
+    HAL_Delay(500);
 
-    uint32_t random_val;
-    int random_col;
-    int available_row;
-    int attempts = 0;
-    const int max_attempts = 50; // Safety limit
+    int chosen_col = -1; // Initialize to invalid column
 
-    do {
-        // Generate random number
-        if (HAL_RNG_GenerateRandomNumber(&hrng, &random_val) != HAL_OK) {
-             printf("RNG Error!\n");
-             // Default to a safe move? (e.g., first available column)
-             random_col = 0; // Fallback, find first valid column below
-             break;
+    // --- 1. Check if AI (Player 2) can win ---
+    for (int c = 0; c < BOARD_COLS; c++) {
+        if (canPlayerWinByMovingHere(SLOT_PLAYER2, c)) {
+            chosen_col = c;
+            //printf("AI found winning move in column %d\n", chosen_col);
+            break; // Found winning move, no need to check further
         }
-        random_col = random_val % BOARD_COLS; // Get column 0-6
+    }
 
-        // Check if this column is valid
-        available_row = findLowestEmptyRow(random_col);
+    // --- 2. If no AI win, check if Human (Player 1) can win (Block) ---
+    if (chosen_col == -1) { // Only check defense if AI can't win
+        for (int c = 0; c < BOARD_COLS; c++) {
+            if (canPlayerWinByMovingHere(SLOT_PLAYER1, c)) {
+                chosen_col = c;
+                //printf("AI found defensive block in column %d\n", chosen_col);
+                break; // Found blocking move, prioritize this
+            }
+        }
+    }
 
-        attempts++;
-        if (attempts > max_attempts) {
-             printf("AI Timeout finding random move, trying linear scan.\n");
-             // Fallback: Find the first available column linearly
-             for (random_col = 0; random_col < BOARD_COLS; random_col++) {
-                  available_row = findLowestEmptyRow(random_col);
-                  if (available_row != -1) break; // Found one
+    // --- 3. If no win and no block, choose a random valid column ---
+    if (chosen_col == -1) {
+        printf("AI making random move...\n");
+        uint32_t random_val;
+        int random_col_attempt;
+        int available_row;
+        int attempts = 0;
+        const int max_attempts = 50; // Safety limit
+
+        do {
+            // Generate random number
+            if (HAL_RNG_GenerateRandomNumber(&hrng, &random_val) != HAL_OK) {
+                 printf("RNG Error! AI defaulting to first available column.\n");
+                 random_col_attempt = -1; // Signal error fallback
+                 break;
+            }
+            random_col_attempt = random_val % BOARD_COLS; // Get column 0-6
+
+            // Check if this column is valid
+            available_row = findLowestEmptyRow(random_col_attempt);
+
+            attempts++;
+            // Break if valid or if max attempts reached
+            if (available_row != -1 || attempts > max_attempts) {
+                break;
+            }
+
+        } while (true); // Loop until valid or max attempts
+
+        // If random attempt failed after many tries or RNG error, scan linearly
+        if (available_row == -1) {
+             //printf("AI random move failed/timed out, trying linear scan.\n");
+             for (int c = 0; c < BOARD_COLS; c++) {
+                  if (findLowestEmptyRow(c) != -1) {
+                      random_col_attempt = c; // Found first available column
+                      available_row = findLowestEmptyRow(c); // Re-check just in case
+                      break;
+                  }
              }
-             // If still no valid column, something is wrong (should have tied)
-             if (available_row == -1) {
-                  printf("AI Error: No valid moves found on full(?) board.\n");
-                  // Maybe force a tie state?
-                  currentAppState = APP_STATE_GAME_OVER;
-                  roundWinner = SLOT_EMPTY;
-                  roundEndTime = HAL_GetTick();
-                  drawGameOverScreen();
-                  return;
-             }
-             break; // Exit loop with linearly found column
         }
 
-    } while (available_row == -1); // Keep trying if random column was full
+        // If still no valid column, game should be a tie (this is a safeguard)
+        if(available_row == -1) {
+             //printf("AI Error: No valid random moves found on board.\n");
+             currentAppState = APP_STATE_GAME_OVER;
+             roundWinner = SLOT_EMPTY; // Force tie
+             roundEndTime = HAL_GetTick();
+             drawGameOverScreen();
+             return;
+        }
 
-    // We have a valid column (random_col)
-    currentColumn = random_col; // Set the column the AI will drop into
-    printf("AI chooses column %d\n", currentColumn);
-    dropCoin(); // Execute the drop
+        chosen_col = random_col_attempt; // Use the valid random (or fallback) column
+        //printf("AI random choice is column %d\n", chosen_col);
+    }
+
+
+    // --- Execute the chosen move ---
+    if (chosen_col != -1) {
+        currentColumn = chosen_col; // Set the column for dropCoin
+        dropCoin(); // Execute the drop
+    } else {
+        printf("AI Error: No column chosen!\n");
+    }
+}
+
+bool canPlayerWinByMovingHere(SlotState_t player, int col) {
+    if (col < 0 || col >= BOARD_COLS) {
+        return false; // Invalid column
+    }
+
+    int row = findLowestEmptyRow(col);
+    if (row == -1) {
+        return false; // Column is full, cannot move here
+    }
+
+    // Simulate the move
+    gameBoard[row][col] = player;
+
+    // Check for win after simulated move
+    bool win = checkWin(player);
+
+    // Undo the simulated move
+    gameBoard[row][col] = SLOT_EMPTY;
+
+    return win;
 }
 
 bool checkWin(SlotState_t player) {

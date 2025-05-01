@@ -47,7 +47,11 @@
 #define RESTART_BUTTON_WIDTH  120
 #define RESTART_BUTTON_HEIGHT 40
 #define RESTART_BUTTON_X      ((LCD_PIXEL_WIDTH - RESTART_BUTTON_WIDTH) / 2)
-#define RESTART_BUTTON_Y      (LCD_PIXEL_HEIGHT - RESTART_BUTTON_HEIGHT - 30) // Near bottom
+#define RESTART_BUTTON_Y      ((LCD_PIXEL_HEIGHT - RESTART_BUTTON_HEIGHT) / 2) // center
+
+// Define Y positions for Stats at the bottom
+#define STATS_Y_SCORE       (LCD_PIXEL_HEIGHT - 60)
+#define STATS_Y_TIME        (LCD_PIXEL_HEIGHT - 40)
 
 // --- Slot State ---
 typedef enum {
@@ -81,7 +85,7 @@ typedef enum {
 #define BUTTON_PADDING      20 // Padding around buttons and screen edges
 
 // Centered horizontally, slightly above vertical center
-#define BUTTON_Y_OFFSET     -30
+#define BUTTON_Y_OFFSET     0
 #define BUTTON1_X           ((LCD_PIXEL_WIDTH - (2 * BUTTON_WIDTH + BUTTON_PADDING)) / 2)
 #define BUTTON1_Y           (LCD_PIXEL_HEIGHT / 2 - BUTTON_HEIGHT / 2 + BUTTON_Y_OFFSET)
 #define BUTTON2_X           (BUTTON1_X + BUTTON_WIDTH + BUTTON_PADDING)
@@ -105,7 +109,7 @@ bool isTouchInside(uint16_t touchX, uint16_t touchY, uint16_t btnX, uint16_t btn
 void LCD_Visual_Demo(void);
 void LCD_Start_Menu(void);
 void LCD_DisplayString(uint16_t Xpos, uint16_t Ypos, uint8_t *ptr, FONT_t* font, uint16_t textColor, uint16_t bgColor, bool opaque);
-
+bool canPlayerWinByMovingHere(SlotState_t player, int col);
 bool checkWin(SlotState_t player);
 bool checkTie(void);
 void drawGameOverScreen(void);
