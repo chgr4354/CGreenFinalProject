@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include <stdio.h>
-
 #include "main.h"
 #include "Scheduler.h"
 /* Private includes ----------------------------------------------------------*/
@@ -148,15 +147,11 @@ void Scheduler_Run(void) {
     }
 
     if (events & GAME_UPDATE_EVENT) {
-        // Simply call the handler. It will check the state internally.
         handleAITurn(); // Call the AI handler function
-        // Add other game updates here if GAME_UPDATE_EVENT is used for more things
         removeSchedulerEvent(GAME_UPDATE_EVENT);
     }
 
     if (events & RENDER_SCREEN_EVENT) {
-         // If drawing is event-driven, call the relevant draw function
-         // Example: could call a generic drawUpdate() function
          removeSchedulerEvent(RENDER_SCREEN_EVENT);
     }
 }

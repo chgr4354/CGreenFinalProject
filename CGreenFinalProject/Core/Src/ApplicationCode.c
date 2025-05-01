@@ -8,9 +8,6 @@
 #include "ApplicationCode.h"
 #include <string.h>
 
-/* Static variables */
-
-
 extern void initialise_monitor_handles(void); 
 
 
@@ -25,7 +22,7 @@ static SlotState_t currentPlayer; // Tracks the current player (SLOT_PLAYER1 or 
 static int8_t currentColumn = BOARD_COLS / 2; // Start preview coin in the middle column (0-6)
 static uint16_t previousPreviewCoinX = 0; // To help erase previous preview coin
 
-// Score & Timer Variables
+// --- Score & Timer Variables ---
 static uint32_t player1Score = 0;
 static uint32_t player2Score = 0;
 static uint32_t roundStartTime = 0;
@@ -39,8 +36,8 @@ static uint32_t lastButtonPressTime = 0;
 #define TOUCH_MOVE_DEBOUNCE 200 // ms between allowed preview coin moves
 #define BUTTON_PRESS_DEBOUNCE 300 // ms between allowed button presses
 
-// External Handles
-extern RNG_HandleTypeDef hrng; // Need RNG handle for AI
+// --- External Handles ---
+extern RNG_HandleTypeDef hrng; // RNG handle
 
 void ApplicationInit(void)
 {
@@ -49,7 +46,7 @@ void ApplicationInit(void)
     LTCD_Layer_Init(0);
     LCD_Clear(0,LCD_COLOR_WHITE);
 
-    #if COMPILE_TOUCH_FUNCTIONS == 1
+    //#if COMPILE_TOUCH_FUNCTIONS == 1
 	InitializeLCDTouch();
 
 	// This is the orientation for the board to be directly up where the buttons are vertically above the screen
@@ -57,13 +54,10 @@ void ApplicationInit(void)
 	StaticTouchData.orientation = STMPE811_Orientation_Portrait_2;
 
 	Button_Init();
-
     currentAppState = APP_STATE_MENU;
     drawMenuScreen();
     //printf("Initial Menu Drawn. Entering Scheduler Loop.\n");
-    //printf("----------------------\n");
-
-	#endif // COMPILE_TOUCH_FUNCTIONS
+	//#endif // COMPILE_TOUCH_FUNCTIONS
 }
 
 // Simple rectangle drawing
@@ -96,6 +90,7 @@ void LCD_DisplayString(uint16_t Xpos, uint16_t Ypos, uint8_t *ptr, FONT_t* font,
     }
 }
 
+// Draw the initial menu screen
 void drawMenuScreen() {
 
 		LCD_Clear(0, LCD_COLOR_BLUE); // Background
@@ -138,13 +133,13 @@ void initializeGameBoard() {
 
 void drawGameBoard() {
     //printf("Drawing Game Board...\n");
-    // 1. Clear the screen
+    // Clear the screen
     LCD_Clear(0, BACKGROUND_COLOR);
 
-    // 2. Draw the main board structure (the blue rectangle)
+    // Draw the main board structure (the blue rectangle)
     LCD_Fill_Rect(BOARD_X_OFFSET, BOARD_Y_OFFSET, BOARD_DRAW_WIDTH, BOARD_DRAW_HEIGHT, BOARD_COLOR);
 
-    // 3. Draw the slots based on the gameBoard state
+    // Draw the slots based on the gameBoard state
     for (int r = 0; r < BOARD_ROWS; r++) {
         for (int c = 0; c < BOARD_COLS; c++) {
             // Calculate the center coordinates of the circle for slot (r, c)
@@ -211,31 +206,31 @@ void drawGameOverScreen() {
     LCD_Fill_Rect(RESTART_BUTTON_X, RESTART_BUTTON_Y, RESTART_BUTTON_WIDTH, RESTART_BUTTON_HEIGHT, LCD_COLOR_GREY);
     LCD_Draw_Rect(RESTART_BUTTON_X, RESTART_BUTTON_Y, RESTART_BUTTON_WIDTH, RESTART_BUTTON_HEIGHT, LCD_COLOR_WHITE); // Outline
     LCD_SetFont(&Font16x24);
-    text_color = LCD_COLOR_WHITE; // White text for button
+    text_color = LCD_COLOR_WHITE;
     sprintf(message, "Restart");
     text_x = RESTART_BUTTON_X + (RESTART_BUTTON_WIDTH - strlen(message) * Font16x24.Width) / 2;
     text_y = RESTART_BUTTON_Y + (RESTART_BUTTON_HEIGHT - Font16x24.Height) / 2;
-    LCD_DisplayString(text_x, text_y, (uint8_t*)message, &Font16x24, text_color, LCD_COLOR_GREY, true); // Use opaque=true here since we filled bg
+    LCD_DisplayString(text_x, text_y, (uint8_t*)message, &Font16x24, text_color, LCD_COLOR_GREY, true);
 }
 
 void drawPreviewCoin() {
-    // 1. Calculate Y position (fixed, above the board)
+    // Calculate Y position (fixed, above the board)
     uint16_t previewCoinY = BOARD_Y_PREVIEW_OFFSET - BOARD_SPACING - CIRCLE_RADIUS;
 
-    // 2. Calculate X position based on currentColumn
+    // Calculate X position based on currentColumn
     uint16_t previewCoinX = BOARD_X_OFFSET + BOARD_SPACING + CIRCLE_RADIUS + currentColumn * (CIRCLE_DIAMETER + BOARD_SPACING);
 
-    // 3. Erase previous coin position (draw background color circle)
-    //    Only erase if the position actually changed
+    // Erase previous coin position (draw background color circle)
+    // Only erase if the position actually changed
     if (previousPreviewCoinX != 0 && previousPreviewCoinX != previewCoinX) {
          LCD_Draw_Circle_Fill(previousPreviewCoinX, previewCoinY, CIRCLE_RADIUS + 1, BACKGROUND_COLOR); // +1 to cover edges
     }
 
-    // 4. Draw the new coin with the current player's color
+    // Draw the new coin with the current player's color
     uint16_t playerColor = getSlotColor(currentPlayer);
     LCD_Draw_Circle_Fill(previewCoinX, previewCoinY, CIRCLE_RADIUS, playerColor);
 
-    // 5. Store current position for next erase
+    // Store current position for next erase
     previousPreviewCoinX = previewCoinX;
 }
 
@@ -253,18 +248,18 @@ int findLowestEmptyRow(int col) {
 }
 
 void dropCoin() {
-    printf("Attempting to drop coin in column %d for player %d\n", currentColumn, currentPlayer);
+    //printf("Attempting to drop coin in column %d for player %d\n", currentColumn, currentPlayer);
 
     int row = findLowestEmptyRow(currentColumn);
 
     if (row != -1) { // Column has space
-        printf("Placing coin at (%d, %d)\n", row, currentColumn);
+        //printf("Placing coin at (%d, %d)\n", row, currentColumn);
         gameBoard[row][currentColumn] = currentPlayer;
         drawGameBoard(); // Redraw board with the new piece
 
         // --- Check for Win ---
         if (checkWin(currentPlayer)) {
-            printf("Player %d Wins!\n", (currentPlayer == SLOT_PLAYER1) ? 1 : 2);
+            //printf("Player %d Wins!\n", (currentPlayer == SLOT_PLAYER1) ? 1 : 2);
             roundWinner = currentPlayer;
             roundEndTime = HAL_GetTick(); // Record end time
             if (currentPlayer == SLOT_PLAYER1) player1Score++;
@@ -276,7 +271,7 @@ void dropCoin() {
 
         // --- Check for Tie ---
         if (checkTie()) {
-            printf("Game is a Tie!\n");
+            //printf("Game is a Tie!\n");
             roundWinner = SLOT_EMPTY; // Indicate a tie
             roundEndTime = HAL_GetTick(); // Record end time
             // No score update for a tie
@@ -288,42 +283,41 @@ void dropCoin() {
         // --- No Win, No Tie -> Switch Player ---
         //SlotState_t previousPlayer = currentPlayer;
         if (isOnePlayerMode) {
-            // Human just played (must be P1), switch to AI
+            // P1 just played, switch to AI
             if (currentPlayer == SLOT_PLAYER1) {
                  currentPlayer = SLOT_PLAYER2; // AI is Player 2
                  currentAppState = APP_STATE_GAME_AI_TURN;
-                 printf("Switched to AI turn.\n");
+                 //printf("Switched to AI turn.\n");
                  addSchedulerEvent(GAME_UPDATE_EVENT); // Trigger AI move
             } else { // AI just played (P2), switch to Human (P1)
                  currentPlayer = SLOT_PLAYER1;
                  currentAppState = APP_STATE_GAME_P1_TURN;
-                 printf("Switched to Player 1 turn.\n");
+                 //printf("Switched to Player 1 turn.\n");
             }
         } else { // Two Player Mode
              if (currentPlayer == SLOT_PLAYER1) {
                  currentPlayer = SLOT_PLAYER2;
                  currentAppState = APP_STATE_GAME_P2_TURN;
-                 printf("Switched to Player 2 turn.\n");
+                 //printf("Switched to Player 2 turn.\n");
              } else {
                  currentPlayer = SLOT_PLAYER1;
                  currentAppState = APP_STATE_GAME_P1_TURN;
-                 printf("Switched to Player 1 turn.\n");
+                 //printf("Switched to Player 1 turn.\n");
              }
         }
 
         // Erase the dropped preview coin and draw the new player's preview coin
         uint16_t previewCoinY = BOARD_Y_OFFSET - BOARD_SPACING - CIRCLE_RADIUS;
-        // Use previous player's color to erase the spot where the coin *was*
+        // Use previous player's color to erase the spot where the coin was
         uint16_t eraseX = BOARD_X_OFFSET + BOARD_SPACING + CIRCLE_RADIUS + currentColumn * (CIRCLE_DIAMETER + BOARD_SPACING);
         LCD_Draw_Circle_Fill(eraseX, previewCoinY, CIRCLE_RADIUS + 1, BACKGROUND_COLOR);
         previousPreviewCoinX = 0; // Reset previous X
-        if (currentAppState != APP_STATE_GAME_AI_TURN) { // Don't draw preview if AI is thinking immediately
+        if (currentAppState != APP_STATE_GAME_AI_TURN) { // Don't draw preview if AI is thinking
              drawPreviewCoin();
         }
 
     } else {
-        printf("Column %d is full!\n", currentColumn);
-        // Optional feedback
+        //printf("Column %d is full!\n", currentColumn);
     }
 }
 
@@ -337,16 +331,13 @@ void handleTouchInput() {
     if (currentTime - lastTouchMoveTime < TOUCH_MOVE_DEBOUNCE) return;
     lastTouchMoveTime = currentTime;
 
-    // Invert Y coordinate ONLY for button checks - this fixes wrong y values
-    //uint16_t inverted_touch_y = LCD_PIXEL_HEIGHT - 1 - touchData.y;
-
 	// --- State Machine for Touch ---
     switch(currentAppState) {
     	case APP_STATE_MENU:
 			// --- Start Timer on Game Start ---
-			// Check Button 1 (Left Button - Should be 1 Player)
+			// Check Button 1 (Left Button)
 			if (isTouchInside(touchData.x, touchData.y, BUTTON1_X, BUTTON1_Y, BUTTON_WIDTH, BUTTON_HEIGHT)) {
-				printf("Button 1 (1 Player) Selected!\n");
+				//printf("Button 1 (1 Player) Selected!\n");
 				isOnePlayerMode = true;
 				initializeGameBoard();
 				currentPlayer = SLOT_PLAYER1;
@@ -356,7 +347,7 @@ void handleTouchInput() {
 				drawGameBoard();
 				drawPreviewCoin();
 			}
-			// Check Button 2 (Right Button - Should be 2 Player)
+			// Check Button 2 (Right Button)
 			else if (isTouchInside(touchData.x, touchData.y, BUTTON2_X, BUTTON2_Y, BUTTON_WIDTH, BUTTON_HEIGHT)) {
 				printf("Button 2 (2 Player) Selected!\n");
 				isOnePlayerMode = false;
@@ -392,13 +383,7 @@ void handleTouchInput() {
         default:
             break;
     }
-	    //addSchedulerEvent(TOUCH_POLLING_EVENT);
-	     // Clear FIFO after processing a press that was acted upon
-	     //I2C3_Write(STMPE811_ADDRESS, STMPE811_FIFO_STA, 0x01);
-	     //I2C3_Write(STMPE811_ADDRESS, STMPE811_FIFO_STA, 0x00);
 }
-
-
 
 // Check if touch coordinates are within a button's bounds
 bool isTouchInside(uint16_t touchX, uint16_t touchY, uint16_t btnX, uint16_t btnY, uint16_t btnW, uint16_t btnH) {
@@ -436,18 +421,15 @@ void pollHardwareButton() {
     uint32_t currentTime = HAL_GetTick();
 
     // Read the button state
-
     if (Button_IsPressed()) {
-
         // Debounce check
         if (currentTime - lastButtonPressTime > BUTTON_PRESS_DEBOUNCE) {
             lastButtonPressTime = currentTime; // Update time of valid press
-            printf("HW Button Pressed during game turn.\n");
+            //printf("HW Button Pressed during game turn.\n");
             dropCoin(); // Trigger the coin drop logic
         }
     } else {
          // Button is not pressed
-         // Can optionally reset debounce timer here if needed,
          // lastButtonPressTime = 0; // Allow immediate press after release
     }
 }
@@ -484,7 +466,7 @@ void handleAITurn() {
 
     // --- 3. If no win and no block, choose a random valid column ---
     if (chosen_col == -1) {
-        printf("AI making random move...\n");
+        //printf("AI making random move...\n");
         uint32_t random_val;
         int random_col_attempt;
         int available_row;
@@ -494,7 +476,7 @@ void handleAITurn() {
         do {
             // Generate random number
             if (HAL_RNG_GenerateRandomNumber(&hrng, &random_val) != HAL_OK) {
-                 printf("RNG Error! AI defaulting to first available column.\n");
+                 //printf("RNG Error! AI defaulting to first available column.\n");
                  random_col_attempt = -1; // Signal error fallback
                  break;
             }
@@ -533,7 +515,7 @@ void handleAITurn() {
              return;
         }
 
-        chosen_col = random_col_attempt; // Use the valid random (or fallback) column
+        chosen_col = random_col_attempt; // Use the valid random column
         //printf("AI random choice is column %d\n", chosen_col);
     }
 
@@ -631,32 +613,4 @@ bool checkTie(void) {
     // If we get here, the top row is full, so the board is full
     return true;
 }
-
-//void LCD_Visual_Demo(void)
-//{
-//	visualDemo();
-//}
-//
-//void LCD_Start_Menu(void) {
-//	startMenu();
-//}
-
-//#if COMPILE_TOUCH_FUNCTIONS == 1
-//void LCD_Touch_Polling_Demo(void)
-//{
-//	LCD_Clear(0,LCD_COLOR_GREEN);
-//	while (1) {
-//		/* If touch pressed */
-//		if (returnTouchStateAndLocation(&StaticTouchData) == STMPE811_State_Pressed) {
-//			/* Touch valid */
-//			printf("\nX: %03d\nY: %03d\n", StaticTouchData.x, StaticTouchData.y);
-//			LCD_Clear(0, LCD_COLOR_RED);
-//		} else {
-//			/* Touch not pressed */
-//			printf("Not Pressed\n\n");
-//			LCD_Clear(0, LCD_COLOR_GREEN);
-//		}
-//	}
-//}
-//#endif // COMPILE_TOUCH_FUNCTIONS
 

@@ -1,5 +1,5 @@
 Core/Src/Button_Driver.o: ../Core/Src/Button_Driver.c \
- ../Core/Inc/Button_Driver.h ../Core/Inc/InterruptControl.h \
+ ../Core/Inc/Button_Driver.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
@@ -34,7 +34,6 @@ Core/Src/Button_Driver.o: ../Core/Src/Button_Driver.c \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 ../Core/Inc/Button_Driver.h:
-../Core/Inc/InterruptControl.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h:

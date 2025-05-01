@@ -9,7 +9,6 @@
 #include "Button_Driver.h"
 #include "Scheduler.h"
 #include "stm32f4xx_hal.h"
-
 #include <stdio.h>
 
 
@@ -23,7 +22,7 @@
 #define PREVIEW_AREA_HEIGHT 50 // Space above the board for the moving coin
 #define BOARD_Y_PREVIEW_OFFSET      PREVIEW_AREA_HEIGHT // Adjust board Y position
 
-#define CIRCLE_RADIUS       14 // Adjust for desired size
+#define CIRCLE_RADIUS       14
 #define CIRCLE_DIAMETER     (2 * CIRCLE_RADIUS)
 #define BOARD_SPACING       4  // Pixels between circles and border
 
@@ -31,7 +30,7 @@
 #define BOARD_DRAW_WIDTH    (BOARD_COLS * CIRCLE_DIAMETER + (BOARD_COLS + 1) * BOARD_SPACING)
 #define BOARD_DRAW_HEIGHT   (BOARD_ROWS * CIRCLE_DIAMETER + (BOARD_ROWS + 1) * BOARD_SPACING)
 
-// Calculate top-left corner position to center the board (approx)
+// Calculate top-left corner position to center the board
 // Adjust Y offset to leave space for status/title/dropping coin area
 #define BOARD_X_OFFSET      ((LCD_PIXEL_WIDTH - BOARD_DRAW_WIDTH) / 2)
 #define BOARD_Y_OFFSET      50 // Start board lower down the screen
@@ -60,20 +59,20 @@ typedef enum {
     SLOT_PLAYER2
 } SlotState_t;
 
-// --- Coin Struct (Potentially for dropping animation, not board state) ---
+// --- Coin Struct ---
 typedef struct {
     uint16_t xPos;      // Current screen X position (center)
     uint16_t yPos;      // Current screen Y position (center)
     uint16_t color;     // PLAYER1_COLOR or PLAYER2_COLOR
     int8_t targetCol;   // Column the coin is aiming for (-1 if not active)
-} Coin_t; // Renamed to avoid conflict if needed elsewhere
+} Coin_t;
 
 // --- Application States ---
 typedef enum {
     APP_STATE_INIT,
     APP_STATE_MENU,
-    APP_STATE_GAME_P1_TURN, // Player 1's turn (Human or AI)
-    APP_STATE_GAME_P2_TURN, // Player 2's turn (Human or AI)
+    APP_STATE_GAME_P1_TURN, // Player 1's turn
+    APP_STATE_GAME_P2_TURN, // Player 2's turn
 	APP_STATE_GAME_AI_TURN,
     APP_STATE_GAME_CHECK_WIN,   // State to check win condition after drop
     APP_STATE_GAME_OVER
@@ -98,7 +97,7 @@ void initializeGameBoard(void); // Sets all slots to empty
 void drawGameBoard(void);
 void drawMenuScreen(void);
 void handleTouchInput(void);
-void pollHardwareButton(void); // Replaces handleHardwareButton if using polling task
+void pollHardwareButton(void);
 void handleGameTouchInput(uint16_t touchX, uint16_t touchY); // Specific game touch handler
 void drawPreviewCoin(void);     // Draws the coin above the board
 void dropCoin(void);            // Handles the logic for dropping the coin
@@ -115,9 +114,10 @@ bool checkTie(void);
 void drawGameOverScreen(void);
 void handleAITurn(void);
 
-
+/*
 #if (COMPILE_TOUCH_FUNCTIONS == 1)
 void LCD_Touch_Polling_Demo(void);
 #endif // (COMPILE_TOUCH_FUNCTIONS == 1)
+*/
 
 #endif /* INC_APPLICATIONCODE_H_ */

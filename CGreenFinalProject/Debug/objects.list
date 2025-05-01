@@ -1,7 +1,6 @@
 "./Core/Src/ApplicationCode.o"
 "./Core/Src/Button_Driver.o"
 "./Core/Src/ErrorHandling.o"
-"./Core/Src/GameDriver.o"
 "./Core/Src/InterruptControl.o"
 "./Core/Src/LCD_Driver.o"
 "./Core/Src/Scheduler.o"
